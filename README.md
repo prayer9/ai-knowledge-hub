@@ -55,3 +55,7 @@ Additional endpoints: `POST/GET /api/knowledge-bases/{id}/documents`, `DELETE /a
 If `DATABASE_URL` is not set, data persists to `./knowledge_hub.db`. For PostgreSQL, set `DATABASE_URL` to a suitable `postgresql+psycopg://...` URL. Run migrations before starting the API.
 
 Tests use isolated SQLite databases and verify persistence across app instances, document ingestion and cited retrieval. The SSE endpoint delivers an already-completed model answer in chunks; it is not yet true upstream model streaming. There is no authentication or per-user isolation, and this MVP must not be exposed as a public multi-tenant service.
+
+## Retrieval smoke evaluation
+
+Run `python -m scripts.evaluate_retrieval` to compute source hit@3 and local latency on 20 synthetic English questions. These small, hand-authored cases help catch regressions but are **not** evidence of accuracy on enterprise documents or production workloads. For stronger resume claims, build a separate representative dataset with labeled relevant sources and compare a baseline.
