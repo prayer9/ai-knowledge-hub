@@ -1,11 +1,19 @@
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+from app.db import Base
 from app.main import create_app
 
 @pytest.fixture
 def client():
-    with TestClient(create_app()) as c:
+    engine = create_engine("sqlite+pysqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    with TestClient(create_app(factory)) as c:
         yield c
+    engine.dispose()
 
 def test_health(client):
     assert client.get("/health").json() == {"status": "ok"}
@@ -21,6 +29,10 @@ def test_crud(client):
     assert client.put(f"/api/knowledge-bases/{item_id}", json={"name": "Updated"}).json()["name"] == "Updated"
     assert client.delete(f"/api/knowledge-bases/{item_id}").status_code == 204
     assert client.get(f"/api/knowledge-bases/{item_id}").status_code == 404
+
+def test_persists_across_requests(client):
+    created = client.post("/api/knowledge-bases", json={"name": "Persistent"}).json()
+    assert client.get("/api/knowledge-bases").json()[0]["id"] == created["id"]
 
 @pytest.mark.parametrize("method", ["get", "put", "delete"])
 def test_missing(client, method):

@@ -7,5 +7,6 @@ class KnowledgeBaseInput(BaseModel):
     description: str = Field(default="", max_length=500)
 
 class KnowledgeBase(KnowledgeBaseInput):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     created_at: datetime
